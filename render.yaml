@@ -1,0 +1,10 @@
+services:
+  - type: web
+    runtime: node
+    name: homedesign-ai
+    repo: https://github.com/nztinversive/homedesign-ai
+    branch: main
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars: []
