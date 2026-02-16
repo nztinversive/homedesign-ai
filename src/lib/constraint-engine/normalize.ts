@@ -17,7 +17,7 @@ function uniqRoomTypes(values: RoomType[]): RoomType[] {
 
 function computeDims(targetSqft: number, minWidth: number, minDepth: number): { width: number; depth: number } {
   let width = Math.max(minWidth, Math.round(Math.sqrt(targetSqft)));
-  let depth = Math.max(minDepth, Math.ceil(targetSqft / width));
+  const depth = Math.max(minDepth, Math.ceil(targetSqft / width));
   if (width * depth < targetSqft) {
     width = Math.max(width, Math.ceil(targetSqft / depth));
   }

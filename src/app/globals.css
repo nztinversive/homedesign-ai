@@ -3,25 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #15130f;
+  --foreground: #f3e9d2;
+  --dark-card: #1f1b16;
+  --dark-border: #3a3328;
+  --cream: #f3e9d2;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .bg-dark-card {
+    background-color: var(--dark-card);
+  }
+
+  .border-dark-border {
+    border-color: var(--dark-border);
+  }
+
+  .text-cream {
+    color: var(--cream);
   }
 }

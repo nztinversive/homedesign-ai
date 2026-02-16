@@ -1,101 +1,126 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useMemo, useState } from 'react';
+import DesignBriefForm from '@/components/DesignBriefForm';
+import PlanDetail from '@/components/PlanDetail';
+import PlanGallery from '@/components/PlanGallery';
+import {
+  analyzeWalls,
+  assignWindows,
+  computeEnvelope,
+  generateVariations,
+  normalizeDesignBrief,
+  scorePlan,
+} from '@/lib/constraint-engine';
+import type { DesignBrief, PlanScore, PlacedPlan, WallAnalysis } from '@/lib/constraint-engine/types';
+
+type ViewMode = 'form' | 'results';
+
+export default function HomePage() {
+  const [brief, setBrief] = useState<DesignBrief | null>(null);
+  const [plans, setPlans] = useState<PlacedPlan[]>([]);
+  const [scores, setScores] = useState<PlanScore[]>([]);
+  const [wallAnalyses, setWallAnalyses] = useState<WallAnalysis[]>([]);
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('form');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const runGeneration = async (nextBrief: DesignBrief) => {
+    setBrief(nextBrief);
+    setErrorMessage(null);
+    setIsGenerating(true);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 160));
+
+      const normalized = normalizeDesignBrief(nextBrief);
+      const envelope = computeEnvelope(normalized);
+      const variations = generateVariations(normalized, envelope);
+
+      const results = variations.map((plan) => {
+        const withWindows = assignWindows(plan);
+        const walls = analyzeWalls(withWindows);
+        const score = scorePlan(withWindows, walls);
+        return { plan: withWindows, walls, score };
+      });
+
+      results.sort((a, b) => b.score.overall - a.score.overall);
+
+      setPlans(results.map((result) => result.plan));
+      setWallAnalyses(results.map((result) => result.walls));
+      setScores(results.map((result) => result.score));
+      setSelectedPlanIndex(0);
+      setViewMode('results');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to generate plans.');
+      setViewMode('form');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const selectedPlan = useMemo(() => plans[selectedPlanIndex] ?? null, [plans, selectedPlanIndex]);
+  const selectedScore = useMemo(() => scores[selectedPlanIndex] ?? null, [scores, selectedPlanIndex]);
+  const hasResults = plans.length > 0 && scores.length > 0 && wallAnalyses.length > 0;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="min-h-screen bg-[#15130f] px-4 py-8 text-cream md:px-8">
+      <div className="mx-auto max-w-[1400px] space-y-6">
+        {viewMode === 'form' || !hasResults ? (
+          <DesignBriefForm initialBrief={brief} isGenerating={isGenerating} onGenerate={runGeneration} />
+        ) : null}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+        {viewMode === 'results' && hasResults && selectedPlan && selectedScore ? (
+          <section className="space-y-5">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setViewMode('form')}
+                className="rounded border border-[#645741] bg-[#1E1912] px-3 py-2 text-sm text-cream transition hover:border-[#B8860B]"
+              >
+                Back to Form
+              </button>
+              <p className="text-sm text-[#C8BDA8]">
+                {plans.length} variations generated • Selected #{selectedPlanIndex + 1}
+              </p>
+            </div>
+
+            <PlanGallery
+              plans={plans}
+              scores={scores}
+              selectedPlanIndex={selectedPlanIndex}
+              onSelectPlan={setSelectedPlanIndex}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+            <PlanDetail
+              plan={selectedPlan}
+              score={selectedScore}
+              onRegenerate={() => {
+                if (brief) {
+                  void runGeneration(brief);
+                }
+              }}
+              onEditBrief={() => setViewMode('form')}
+            />
+          </section>
+        ) : null}
+
+        {errorMessage ? (
+          <div className="rounded border border-[#8B3A2B] bg-[#2A1714] px-4 py-3 text-sm text-[#F5D0C5]">{errorMessage}</div>
+        ) : null}
+      </div>
+
+      {isGenerating ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#15130f]/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-lg border border-dark-border bg-dark-card p-6">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#CCB685]">Generating Plans</p>
+            <div className="h-2 overflow-hidden rounded-full bg-[#2A241A]">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-[#B8860B]" />
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      ) : null}
+    </main>
   );
 }

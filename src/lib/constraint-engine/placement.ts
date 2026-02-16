@@ -6,7 +6,6 @@ import type {
   PlacedPlan,
   PlacedRoom,
   Rect,
-  RoomType,
   Zone,
   ZonedPlan,
   ZonedRoom,
