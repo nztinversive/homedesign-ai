@@ -31,13 +31,22 @@ export default function PlanCard({ plan, score, selected, onSelect }: PlanCardPr
         selected ? 'border-[#B8860B] bg-[#221d14]' : 'border-dark-border bg-dark-card hover:border-[#876326]'
       }`}
     >
-      <FloorPlanSVG plan={plan} width={300} height={200} showGrid={false} showLabels={false} />
+      <FloorPlanSVG
+        plan={plan}
+        width={300}
+        height={200}
+        showGrid={false}
+        showLabels={false}
+        showDoors={false}
+        showWindows={false}
+        enableZoomPan={false}
+      />
 
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-cream">{plan.metadata.strategy}</p>
           <p className="text-xs text-[#C2B69F]">
-            {totalSqft} sqft • {plan.rooms.length} rooms
+            {totalSqft} sqft | {plan.rooms.length} rooms
           </p>
         </div>
         <span

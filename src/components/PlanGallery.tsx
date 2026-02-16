@@ -44,7 +44,7 @@ export default function PlanGallery({ plans, scores, selectedPlanIndex, onSelect
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {sortedIndices.map((planIndex) => (
           <PlanCard
             key={`${plans[planIndex].metadata.strategy}-${planIndex}`}

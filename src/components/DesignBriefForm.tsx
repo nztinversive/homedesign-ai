@@ -1,11 +1,21 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import LotConstraintsPanel from './LotConstraintsPanel';
 import RoomListBuilder from './RoomListBuilder';
 import RoomPresets, { buildPresetRooms } from './RoomPresets';
-import type { DesignBrief, HomeStyle, RoomRequirement } from '@/lib/constraint-engine/types';
+import type { DesignBrief, HomeStyle, LotConstraints, RoomRequirement } from '@/lib/constraint-engine/types';
 
 const HOME_STYLES: HomeStyle[] = ['modern', 'traditional', 'craftsman', 'farmhouse', 'contemporary', 'ranch'];
+const DEFAULT_LOT: LotConstraints = {
+  maxWidth: 80,
+  maxDepth: 120,
+  setbackFront: 25,
+  setbackSide: 8,
+  setbackRear: 15,
+  entryFacing: 'south',
+  garagePosition: 'none',
+};
 
 interface DesignBriefFormProps {
   initialBrief?: DesignBrief | null;
@@ -32,6 +42,7 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
   const [stories, setStories] = useState<1 | 2>(initialBrief?.stories ?? 1);
   const [style, setStyle] = useState<HomeStyle>(initialBrief?.style ?? 'ranch');
   const [rooms, setRooms] = useState<RoomRequirement[]>(initialBrief?.rooms ?? buildPresetRooms('3BR/2BA'));
+  const [lot, setLot] = useState<LotConstraints>(() => ({ ...DEFAULT_LOT, ...(initialBrief?.lot ?? {}) }));
 
   useEffect(() => {
     if (!initialBrief) {
@@ -41,6 +52,7 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
     setStories(initialBrief.stories);
     setStyle(initialBrief.style);
     setRooms(initialBrief.rooms);
+    setLot({ ...DEFAULT_LOT, ...(initialBrief.lot ?? {}) });
   }, [initialBrief]);
 
   const roomCount = useMemo(() => rooms.length, [rooms.length]);
@@ -53,11 +65,12 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
       stories,
       style,
       rooms: normalized,
+      lot,
     });
   };
 
   return (
-    <form onSubmit={submit} className="mx-auto w-full max-w-6xl space-y-6 rounded-xl border border-dark-border bg-dark-card p-6">
+    <form onSubmit={submit} className="mx-auto w-full max-w-6xl space-y-6 rounded-xl border border-dark-border bg-dark-card p-4 sm:p-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-cream">Home Design AI</h1>
         <p className="text-sm text-[#C8BDA8]">Describe your home brief and generate multiple floor plan variations.</p>
@@ -126,6 +139,7 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
 
       <RoomPresets onSelectPreset={setRooms} />
       <RoomListBuilder rooms={rooms} onChange={setRooms} />
+      <LotConstraintsPanel lot={lot} onChange={setLot} />
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-dark-border pt-4">
         <p className="text-sm text-[#C8BDA8]">{roomCount} rooms configured</p>
