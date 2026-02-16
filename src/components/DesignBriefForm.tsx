@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import LotConstraintsPanel from './LotConstraintsPanel';
 import RoomListBuilder from './RoomListBuilder';
 import RoomPresets, { buildPresetRooms } from './RoomPresets';
+import RoomSuggestions from './RoomSuggestions';
 import type { DesignBrief, HomeStyle, LotConstraints, RoomRequirement } from '@/lib/constraint-engine/types';
+import { getStyleDefaults } from '@/lib/style-defaults';
 
 const HOME_STYLES: HomeStyle[] = ['modern', 'traditional', 'craftsman', 'farmhouse', 'contemporary', 'ranch'];
 const DEFAULT_LOT: LotConstraints = {
@@ -37,12 +39,20 @@ function normalizeRooms(rooms: RoomRequirement[]): RoomRequirement[] {
     .filter((room) => room.label.length > 0);
 }
 
+function formatTypeLabel(type: string): string {
+  return type
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
 export default function DesignBriefForm({ initialBrief, isGenerating = false, onGenerate }: DesignBriefFormProps) {
   const [targetSqft, setTargetSqft] = useState(initialBrief?.targetSqft ?? 1800);
   const [stories, setStories] = useState<1 | 2>(initialBrief?.stories ?? 1);
   const [style, setStyle] = useState<HomeStyle>(initialBrief?.style ?? 'ranch');
   const [rooms, setRooms] = useState<RoomRequirement[]>(initialBrief?.rooms ?? buildPresetRooms('3BR/2BA'));
   const [lot, setLot] = useState<LotConstraints>(() => ({ ...DEFAULT_LOT, ...(initialBrief?.lot ?? {}) }));
+  const styleDefaults = useMemo(() => getStyleDefaults(style), [style]);
 
   useEffect(() => {
     if (!initialBrief) {
@@ -56,6 +66,38 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
   }, [initialBrief]);
 
   const roomCount = useMemo(() => rooms.length, [rooms.length]);
+  const styleBannerText = useMemo(
+    () => `${titleFromStyle(style)} style adds: ${styleDefaults.envelopeHints.highlights.join(', ')}`,
+    [style, styleDefaults],
+  );
+
+  const styleDefaultAdditions = useMemo(() => {
+    const existingTypes = new Set(rooms.map((room) => room.type));
+    return styleDefaults.defaultRooms.filter((room) => !existingTypes.has(room.type));
+  }, [rooms, styleDefaults.defaultRooms]);
+
+  const canApplyStyleDefaults = useMemo(() => {
+    const needsStoryChange = Boolean(styleDefaults.forcedStories && styleDefaults.forcedStories !== stories);
+    return styleDefaultAdditions.length > 0 || needsStoryChange;
+  }, [stories, styleDefaultAdditions.length, styleDefaults.forcedStories]);
+
+  const applyStyleDefaults = () => {
+    if (styleDefaults.forcedStories) {
+      setStories(styleDefaults.forcedStories);
+    }
+
+    if (styleDefaultAdditions.length === 0) {
+      return;
+    }
+
+    setRooms((currentRooms) => {
+      const existingTypes = new Set(currentRooms.map((room) => room.type));
+      const additions = styleDefaults.defaultRooms
+        .filter((room) => !existingTypes.has(room.type))
+        .map((room) => ({ ...room }));
+      return [...currentRooms, ...additions];
+    });
+  };
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -137,8 +179,49 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
         </div>
       </div>
 
+      <section className="space-y-3 rounded-lg border border-[#5A471F] bg-[#1A160F] p-4">
+        <p className="text-sm text-[#E7CF95]">{styleBannerText}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={applyStyleDefaults}
+            disabled={!canApplyStyleDefaults}
+            className="rounded border border-[#B8860B] bg-[#B8860B] px-3 py-2 text-sm font-semibold text-[#15130f] transition hover:bg-[#CF9918] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Apply {titleFromStyle(style)} Defaults
+          </button>
+          {styleDefaults.forcedStories ? (
+            <p className="text-xs text-[#CDBB97]">{titleFromStyle(style)} prefers a {styleDefaults.forcedStories}-story layout.</p>
+          ) : null}
+        </div>
+        {styleDefaultAdditions.length > 0 ? (
+          <p className="text-xs text-[#CDBB97]">
+            Suggested additions: {styleDefaultAdditions.map((room) => room.label || formatTypeLabel(room.type)).join(', ')}
+          </p>
+        ) : null}
+        {styleDefaults.removedRooms.length > 0 ? (
+          <p className="text-xs text-[#B5A384]">
+            Preferred replacements: {styleDefaults.removedRooms.map((type) => formatTypeLabel(type)).join(', ')}
+          </p>
+        ) : null}
+      </section>
+
       <RoomPresets onSelectPreset={setRooms} />
       <RoomListBuilder rooms={rooms} onChange={setRooms} />
+      <RoomSuggestions
+        targetSqft={Math.round(targetSqft)}
+        stories={stories}
+        style={style}
+        rooms={rooms}
+        onAddRoom={(roomRequirement) => {
+          setRooms((currentRooms) => {
+            if (currentRooms.some((room) => room.type === roomRequirement.type)) {
+              return currentRooms;
+            }
+            return [...currentRooms, roomRequirement];
+          });
+        }}
+      />
       <LotConstraintsPanel lot={lot} onChange={setLot} />
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-dark-border pt-4">

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
+import CostPanel from './CostPanel';
 import FloorPlanSVG from './FloorPlanSVG';
 import ScorePanel from './ScorePanel';
 import ZoneLegend from './ZoneLegend';
-import type { PlanScore, PlacedPlan, Zone } from '@/lib/constraint-engine/types';
+import type { PlanScore, PlacedPlan, WallAnalysis, Zone } from '@/lib/constraint-engine/types';
 
 const ZONE_BADGE_COLORS: Record<Zone, string> = {
   social: '#4A90D9',
@@ -19,6 +20,7 @@ type LayerKey = 'grid' | 'dimensions' | 'labels' | 'doors' | 'windows';
 
 interface PlanDetailProps {
   plan: PlacedPlan;
+  walls: WallAnalysis;
   score: PlanScore;
   onRegenerate: () => void;
   onEditBrief: () => void;
@@ -74,7 +76,7 @@ function LayerIcon({ layer }: { layer: LayerKey }) {
   );
 }
 
-export default function PlanDetail({ plan, score, onRegenerate, onEditBrief }: PlanDetailProps) {
+export default function PlanDetail({ plan, walls, score, onRegenerate, onEditBrief }: PlanDetailProps) {
   const [highlightRoomId, setHighlightRoomId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showDimensions, setShowDimensions] = useState(false);
@@ -218,6 +220,7 @@ export default function PlanDetail({ plan, score, onRegenerate, onEditBrief }: P
 
       <aside className="space-y-4">
         <ScorePanel score={score} />
+        <CostPanel plan={plan} walls={walls} />
 
         <section className="space-y-3 rounded-lg border border-dark-border bg-dark-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-[#CAB89B]">Rooms</h3>

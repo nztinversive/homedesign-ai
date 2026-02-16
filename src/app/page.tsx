@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import DesignBriefForm from '@/components/DesignBriefForm';
+import PhotoUpload from '@/components/PhotoUpload';
 import PlanDetail from '@/components/PlanDetail';
 import PlanGallery from '@/components/PlanGallery';
 import {
@@ -15,6 +16,7 @@ import {
 import type { DesignBrief, PlanScore, PlacedPlan, WallAnalysis } from '@/lib/constraint-engine/types';
 
 type ViewMode = 'form' | 'results';
+type InputMode = 'scratch' | 'upload';
 
 export default function HomePage() {
   const [brief, setBrief] = useState<DesignBrief | null>(null);
@@ -24,6 +26,7 @@ export default function HomePage() {
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('form');
+  const [inputMode, setInputMode] = useState<InputMode>('scratch');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const runGeneration = async (nextBrief: DesignBrief) => {
@@ -62,16 +65,54 @@ export default function HomePage() {
 
   const selectedPlan = useMemo(() => plans[selectedPlanIndex] ?? null, [plans, selectedPlanIndex]);
   const selectedScore = useMemo(() => scores[selectedPlanIndex] ?? null, [scores, selectedPlanIndex]);
+  const selectedWalls = useMemo(() => wallAnalyses[selectedPlanIndex] ?? null, [wallAnalyses, selectedPlanIndex]);
   const hasResults = plans.length > 0 && scores.length > 0 && wallAnalyses.length > 0;
 
   return (
     <main className="min-h-screen bg-[#15130f] px-4 py-8 text-cream md:px-8">
       <div className="mx-auto max-w-[1400px] space-y-6">
         {viewMode === 'form' || !hasResults ? (
-          <DesignBriefForm initialBrief={brief} isGenerating={isGenerating} onGenerate={runGeneration} />
+          <section className="space-y-4">
+            <div className="mx-auto flex w-full max-w-6xl rounded-lg border border-dark-border bg-dark-card p-1">
+              <button
+                type="button"
+                onClick={() => setInputMode('scratch')}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+                  inputMode === 'scratch'
+                    ? 'bg-[#B8860B] text-[#15130f]'
+                    : 'bg-transparent text-[#D7C6A7] hover:text-[#F0DEB8]'
+                }`}
+              >
+                Design from Scratch
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputMode('upload')}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+                  inputMode === 'upload'
+                    ? 'bg-[#B8860B] text-[#15130f]'
+                    : 'bg-transparent text-[#D7C6A7] hover:text-[#F0DEB8]'
+                }`}
+              >
+                Upload Floor Plan
+              </button>
+            </div>
+
+            {inputMode === 'scratch' ? (
+              <DesignBriefForm initialBrief={brief} isGenerating={isGenerating} onGenerate={runGeneration} />
+            ) : (
+              <PhotoUpload
+                initialBrief={brief}
+                onUseExtractedBrief={(extractedBrief) => {
+                  setBrief(extractedBrief);
+                  setInputMode('scratch');
+                }}
+              />
+            )}
+          </section>
         ) : null}
 
-        {viewMode === 'results' && hasResults && selectedPlan && selectedScore ? (
+        {viewMode === 'results' && hasResults && selectedPlan && selectedScore && selectedWalls ? (
           <section className="space-y-5">
             <div className="flex items-center justify-between gap-3">
               <button
@@ -95,6 +136,7 @@ export default function HomePage() {
 
             <PlanDetail
               plan={selectedPlan}
+              walls={selectedWalls}
               score={selectedScore}
               onRegenerate={() => {
                 if (brief) {
