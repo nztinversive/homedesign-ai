@@ -1,9 +1,9 @@
 /**
- * Constraint Engine — Type Definitions
+ * Constraint Engine - Type Definitions
  * All interfaces for the floor plan generation system.
  */
 
-// ─── Enums & Literals ─────────────────────────────────────────────
+// Enums and literals
 
 export type HomeStyle = 'modern' | 'traditional' | 'craftsman' | 'farmhouse' | 'contemporary' | 'ranch';
 export type Direction = 'north' | 'south' | 'east' | 'west';
@@ -18,7 +18,7 @@ export type RoomType =
   | 'garage' | 'front_porch' | 'back_porch' | 'outdoor_living'
   | 'foyer' | 'hallway' | 'stairs' | 'bonus' | 'theater' | 'gym';
 
-// ─── Input Types ──────────────────────────────────────────────────
+// Input types
 
 export interface DesignBrief {
   targetSqft: number;
@@ -51,7 +51,7 @@ export interface LotConstraints {
   garagePosition?: 'left' | 'right' | 'rear' | 'none';
 }
 
-// ─── Internal Processing Types ────────────────────────────────────
+// Internal processing types
 
 export interface NormalizedRoom {
   id: string;
@@ -71,6 +71,18 @@ export interface NormalizedRoom {
   awayFrom: RoomType[];
   floor?: 1 | 2;
   priority: number;
+}
+
+export interface NormalizedBrief {
+  targetSqft: number;
+  stories: 1 | 2;
+  style: HomeStyle;
+  rooms: NormalizedRoom[];
+  lot: LotConstraints;
+  metadata: {
+    impliedRoomIds: string[];
+    warnings: string[];
+  };
 }
 
 export interface RoomDefaults {
@@ -105,7 +117,31 @@ export interface CandidatePlacement {
   score: number;
 }
 
-// ─── Output Types ─────────────────────────────────────────────────
+export interface FloorRects {
+  1: Rect;
+  2?: Rect;
+}
+
+export interface ZoneAnchor {
+  zone: Zone;
+  floor: 1 | 2;
+  x: number;
+  y: number;
+}
+
+export interface ZonedRoom extends NormalizedRoom {
+  floor: 1 | 2;
+}
+
+export interface ZonedPlan {
+  brief: NormalizedBrief;
+  envelope: BuildingEnvelope;
+  rooms: ZonedRoom[];
+  zoneRegions: ZonedRegion[];
+  zoneAnchors: ZoneAnchor[];
+}
+
+// Output types
 
 export interface Envelope {
   shape: EnvelopeShape;
@@ -114,6 +150,15 @@ export interface Envelope {
   boundingWidth: number;
   boundingDepth: number;
   streetFacing: Direction;
+}
+
+export interface BuildingEnvelope extends Envelope {
+  lot: LotConstraints;
+  buildableRect: Rect;
+  footprint: Rect;
+  floorRects: FloorRects;
+  targetSqftPerFloor: number;
+  gridResolution: 1;
 }
 
 export interface PlacedRoom {
@@ -131,6 +176,10 @@ export interface PlacedRoom {
   adjacentRoomIds: string[];
   exteriorWalls: Direction[];
   hasPlumbing: boolean;
+  targetSqft?: number;
+  minSqft?: number;
+  needsExteriorWall?: boolean;
+  needsPlumbing?: boolean;
 }
 
 export interface Wall {
@@ -161,16 +210,46 @@ export interface WindowPlacement {
   height: number;
   sillHeight: number;
   type: 'standard' | 'picture' | 'bay' | 'clerestory';
+  roomId?: string;
+  floor?: 1 | 2;
+  wallDirection?: Direction;
+}
+
+export interface SharedWall {
+  id: string;
+  roomAId: string;
+  roomBId: string;
+  length: number;
+  orientation: 'horizontal' | 'vertical';
+}
+
+export interface WallAnalysis {
+  walls: Wall[];
+  sharedWalls: SharedWall[];
+  wetWalls: SharedWall[];
+  totalExteriorLength: number;
+  totalInteriorLength: number;
+  plumbingGroups: string[][];
 }
 
 export interface PlanScore {
   overall: number;
+
+  // Required 8 metrics
+  adjacencySatisfaction: number;
+  zoneCohesion: number;
   naturalLight: number;
+  plumbingEfficiency: number;
+  circulationQuality: number;
+  spaceUtilization: number;
+  privacyGradient: number;
+  overallBuildability: number;
+
+  // Compatibility aliases for legacy consumers.
+  adjacencyScore: number;
   circulation: number;
   privacy: number;
   buildability: number;
-  adjacencyScore: number;
-  plumbingEfficiency: number;
   sqftAccuracy: number;
 }
 
@@ -180,6 +259,20 @@ export interface CirculationResult {
   mainPath: string[];
   hallwayPercent: number;
   doors: Door[];
+}
+
+export interface PlacedPlan {
+  brief: NormalizedBrief;
+  envelope: BuildingEnvelope;
+  rooms: PlacedRoom[];
+  doors: Door[];
+  windows: WindowPlacement[];
+  circulation: CirculationResult;
+  unplacedRoomIds: string[];
+  metadata: {
+    strategy: string;
+    warnings: string[];
+  };
 }
 
 export interface GeneratedPlan {
@@ -209,4 +302,24 @@ export interface WindowConfig {
   width: number;
   height: number;
   sillHeight: number;
+}
+
+export interface VariationOptions {
+  name: string;
+  mirrorX?: boolean;
+  mirrorY?: boolean;
+  swapSocialPrivate?: boolean;
+  rotateEntry?: boolean;
+  widthBias?: number;
+  placementOrder?: 'default' | 'priority' | 'zone' | 'reverse';
+}
+
+export interface PlacementOptions {
+  placementOrder?: 'default' | 'priority' | 'zone' | 'reverse';
+  widthBias?: number;
+}
+
+export interface ZoningOptions {
+  swapSocialPrivate?: boolean;
+  rotateEntry?: boolean;
 }

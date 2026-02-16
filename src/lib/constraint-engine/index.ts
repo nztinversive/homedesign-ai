@@ -1,9 +1,5 @@
 /**
- * Constraint Engine — Main Export
- *
- * Usage:
- *   import { generateVariations } from '@/lib/constraint-engine';
- *   const plans = generateVariations(brief, 6);
+ * Constraint Engine - Main Export
  */
 
 export type {
@@ -21,15 +17,24 @@ export type {
   RoomType,
   HomeStyle,
   Zone,
+  Rect,
+  NormalizedRoom,
+  NormalizedBrief,
+  BuildingEnvelope,
+  ZonedRoom,
+  ZonedPlan,
+  PlacedPlan,
+  WallAnalysis,
+  SharedWall,
 } from './types';
 
-// Algorithm modules — will be implemented tonight
-// export { normalizeRooms } from './normalize';
-// export { generateEnvelope } from './envelope';
-// export { zoneEnvelope } from './zoning';
-// export { placeRooms } from './placement';
-// export { addCirculation } from './circulation';
-// export { addWindows } from './windows';
-// export { generateWalls } from './walls';
-// export { scorePlan } from './scoring';
-// export { generateVariations } from './variations';
+export { normalizeDesignBrief } from './normalize';
+export { computeEnvelope } from './envelope';
+export { assignZones } from './zoning';
+export { placeRooms } from './placement';
+export { ensureCirculation } from './circulation';
+export { assignWindows } from './windows';
+export { analyzeWalls } from './walls';
+export { scorePlan } from './scoring';
+export { generateVariations } from './variations';
+export { runConstraintEngineTests, PRD_EXAMPLE_BRIEF } from './test';
