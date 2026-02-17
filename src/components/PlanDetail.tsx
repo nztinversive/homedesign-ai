@@ -5,7 +5,7 @@ import CostPanel from './CostPanel';
 import FloorPlanSVG from './FloorPlanSVG';
 import ScorePanel from './ScorePanel';
 import ZoneLegend from './ZoneLegend';
-import type { PlanScore, PlacedPlan, WallAnalysis, Zone } from '@/lib/constraint-engine/types';
+import type { PlanScore, PlacedPlan, WallAnalysis, Zone, DesignBrief, GeneratedPlan } from '@/lib/constraint-engine/types';
 
 const ZONE_BADGE_COLORS: Record<Zone, string> = {
   social: '#4A90D9',
@@ -22,6 +22,7 @@ interface PlanDetailProps {
   plan: PlacedPlan;
   walls: WallAnalysis;
   score: PlanScore;
+  brief?: DesignBrief;
   onRegenerate: () => void;
   onEditBrief: () => void;
 }
@@ -76,7 +77,7 @@ function LayerIcon({ layer }: { layer: LayerKey }) {
   );
 }
 
-export default function PlanDetail({ plan, walls, score, onRegenerate, onEditBrief }: PlanDetailProps) {
+export default function PlanDetail({ plan, walls, score, brief, onRegenerate, onEditBrief }: PlanDetailProps) {
   const [highlightRoomId, setHighlightRoomId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [showDimensions, setShowDimensions] = useState(false);
@@ -275,6 +276,32 @@ export default function PlanDetail({ plan, walls, score, onRegenerate, onEditBri
           >
             Export SVG
           </button>
+          {brief && (
+            <button
+              type="button"
+              onClick={async () => {
+                const { downloadPlanPDF } = await import('./PlanPDF');
+                const genPlan: GeneratedPlan = {
+                  envelope: plan.envelope,
+                  rooms: plan.rooms,
+                  walls: walls.walls,
+                  doors: plan.doors,
+                  windows: plan.windows ?? [],
+                  circulation: plan.circulation,
+                  score,
+                  metadata: {
+                    generationTimeMs: 0,
+                    seed: 0,
+                    variationStrategy: plan.metadata?.strategy ?? 'default',
+                  },
+                };
+                downloadPlanPDF(genPlan, brief);
+              }}
+              className="col-span-full rounded border border-[#B8860B] bg-[#201A13] px-3 py-2 text-sm text-[#C9A84C] transition hover:bg-[#2A2216]"
+            >
+              📄 Export PDF
+            </button>
+          )}
         </div>
       </aside>
     </section>

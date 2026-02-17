@@ -138,6 +138,7 @@ export default function HomePage() {
               plan={selectedPlan}
               walls={selectedWalls}
               score={selectedScore}
+              brief={brief ?? undefined}
               onRegenerate={() => {
                 if (brief) {
                   void runGeneration(brief);
