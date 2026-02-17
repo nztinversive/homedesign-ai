@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Home Design AI
+
+AI-powered modular home floor plan generator with compliance checking. Input your requirements, get optimized floor plans that meet building codes.
+
+## What It Does
+
+- **Design from Scratch** — Fill out a design brief (square footage, style, rooms, budget) and generate multiple floor plan variations
+- **Upload Floor Plan** — Upload an existing floor plan photo to extract dimensions and generate optimized alternatives
+- **Constraint Engine** — 10+ rule categories ensure plans meet IRC/IBC residential building codes (room minimums, egress, accessibility, bathroom fixtures, etc.)
+- **Compliance Review** — Each plan is scored across structural, code compliance, livability, and efficiency dimensions
+- **Jurisdiction Support** — Colorado-specific amendments with extensible framework for other states
+- **Plan Gallery** — Compare variations side-by-side, ranked by overall score
+- **PDF Export** — Download detailed floor plan PDFs with dimensions and room labels
+- **Convex Backend** — Real-time data persistence for designs, projects, and user favorites
+
+## Tech Stack
+
+- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
+- **Backend:** [Convex](https://convex.dev) (real-time reactive database, serverless functions)
+- **Constraint Engine:** Custom TypeScript rules engine (`src/lib/constraint-engine/`)
+- **PDF:** `@react-pdf/renderer` for floor plan PDF generation
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Set up Convex (already configured — just need local dev server)
+npx convex dev
+
+# Run the app
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local`:
 
-## Learn More
+```
+NEXT_PUBLIC_CONVEX_URL=<your-convex-deployment-url>
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Next.js app router
+├── components/             # UI components
+│   ├── DesignBriefForm.tsx  # Input form for design requirements
+│   ├── PhotoUpload.tsx      # Floor plan image upload + extraction
+│   ├── PlanGallery.tsx      # Side-by-side plan comparison
+│   ├── PlanDetail.tsx       # Detailed plan view with scores
+│   └── PlanPDF.tsx          # PDF generation
+├── lib/
+│   ├── constraint-engine/   # Building code compliance rules
+│   │   ├── types.ts         # Core types (plans, rooms, scores)
+│   │   ├── constants.ts     # IRC/IBC code constants
+│   │   ├── index.ts         # Engine orchestration
+│   │   ├── colorado.ts      # Colorado-specific amendments
+│   │   └── rules/           # Individual rule implementations
+│   ├── convex/              # Convex hooks and helpers
+│   └── convex-helpers.ts    # Serialization utilities
+convex/
+├── schema.ts               # Database schema (designs, projects, users)
+├── designs.ts              # Design CRUD mutations/queries
+├── projects.ts             # Project management
+└── users.ts                # User management
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+Deployed on [Render](https://render.com) with Convex Cloud backend.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private — Fading West Development
