@@ -21,6 +21,17 @@ export const getById = query({
   },
 });
 
+export const listByUser = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("designs")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .collect();
+  },
+});
+
 export const listFavorites = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {

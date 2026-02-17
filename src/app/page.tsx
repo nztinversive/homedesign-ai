@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import DesignBriefForm from '@/components/DesignBriefForm';
 import PhotoUpload from '@/components/PhotoUpload';
 import PlanDetail from '@/components/PlanDetail';
@@ -14,6 +15,7 @@ import {
   scorePlan,
 } from '@/lib/constraint-engine';
 import type { DesignBrief, PlanScore, PlacedPlan, WallAnalysis } from '@/lib/constraint-engine/types';
+import { usePersistDesigns } from '@/lib/convex/usePersistDesigns';
 
 type ViewMode = 'form' | 'results';
 type InputMode = 'scratch' | 'upload';
@@ -28,6 +30,8 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>('form');
   const [inputMode, setInputMode] = useState<InputMode>('scratch');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const persist = usePersistDesigns();
 
   const runGeneration = async (nextBrief: DesignBrief) => {
     setBrief(nextBrief);
@@ -55,6 +59,24 @@ export default function HomePage() {
       setScores(results.map((result) => result.score));
       setSelectedPlanIndex(0);
       setViewMode('results');
+
+      // Auto-save to Convex in background
+      if (persist.isReady) {
+        persist
+          .saveDesigns(
+            nextBrief,
+            results.map((r) => r.plan),
+            results.map((r) => r.walls),
+            results.map((r) => r.score)
+          )
+          .then((projectId) => {
+            if (projectId) {
+              setSavedMessage('Designs saved to cloud');
+              setTimeout(() => setSavedMessage(null), 3000);
+            }
+          })
+          .catch(() => { /* silent fail */ });
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to generate plans.');
       setViewMode('form');
@@ -71,6 +93,15 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#15130f] px-4 py-8 text-cream md:px-8">
       <div className="mx-auto max-w-[1400px] space-y-6">
+        <div className="flex items-center justify-end">
+          <Link
+            href="/designs"
+            className="rounded border border-[#645741] bg-[#1E1912] px-3 py-2 text-sm text-cream transition hover:border-[#B8860B]"
+          >
+            Saved Designs →
+          </Link>
+        </div>
+
         {viewMode === 'form' || !hasResults ? (
           <section className="space-y-4">
             <div className="mx-auto flex w-full max-w-6xl rounded-lg border border-dark-border bg-dark-card p-1">
@@ -147,6 +178,10 @@ export default function HomePage() {
               onEditBrief={() => setViewMode('form')}
             />
           </section>
+        ) : null}
+
+        {savedMessage ? (
+          <div className="rounded border border-[#4A6B3A] bg-[#1A2A14] px-4 py-3 text-sm text-[#C5F5D0]">{savedMessage}</div>
         ) : null}
 
         {errorMessage ? (
