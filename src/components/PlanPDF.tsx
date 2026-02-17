@@ -1,6 +1,6 @@
 'use client';
 
-import { Document, Page, View, Text, Svg, Rect as SvgRect, Line, StyleSheet, pdf } from '@react-pdf/renderer';
+import { Document, Page, View, Text, Svg, G, Rect as SvgRect, Line, StyleSheet, pdf } from '@react-pdf/renderer';
 import type { GeneratedPlan, PlacedRoom, PlanScore, DesignBrief } from '../lib/constraint-engine/types';
 
 // Zone colors matching the SVG renderer
@@ -268,7 +268,7 @@ function FloorPlanSVG({ rooms, envelope }: { rooms: PlacedRoom[]; envelope: Gene
           fill="none"
           stroke="#CBD5E1"
           strokeWidth={1}
-          strokeDashArray="4,2"
+          strokeDasharray="4,2"
         />
       ))}
 
@@ -281,7 +281,7 @@ function FloorPlanSVG({ rooms, envelope }: { rooms: PlacedRoom[]; envelope: Gene
         const ry = sy(room.y);
 
         return (
-          <View key={room.id}>
+          <G key={room.id}>
             <SvgRect
               x={rx}
               y={ry}
@@ -297,7 +297,7 @@ function FloorPlanSVG({ rooms, envelope }: { rooms: PlacedRoom[]; envelope: Gene
               <Text
                 x={rx + rw / 2}
                 y={ry + rd / 2 - 3}
-                style={{ fontSize: 6, fill: '#374151', textAnchor: 'middle' } as React.CSSProperties}
+                style={{ fontSize: 6, fill: '#374151', textAnchor: 'middle' } as any}
               >
                 {room.label}
               </Text>
@@ -307,12 +307,12 @@ function FloorPlanSVG({ rooms, envelope }: { rooms: PlacedRoom[]; envelope: Gene
               <Text
                 x={rx + rw / 2}
                 y={ry + rd / 2 + 5}
-                style={{ fontSize: 5, fill: '#9CA3AF', textAnchor: 'middle' } as React.CSSProperties}
+                style={{ fontSize: 5, fill: '#9CA3AF', textAnchor: 'middle' } as any}
               >
                 {room.width}&apos; × {room.depth}&apos;
               </Text>
             )}
-          </View>
+          </G>
         );
       })}
 
@@ -491,12 +491,17 @@ export async function generatePlanPDF(plan: GeneratedPlan, brief: DesignBrief): 
 }
 
 export function downloadPlanPDF(plan: GeneratedPlan, brief: DesignBrief) {
-  generatePlanPDF(plan, brief).then((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `floor-plan-${brief.targetSqft}sqft-${brief.style}-${new Date().toISOString().slice(0, 10)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+  generatePlanPDF(plan, brief)
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `floor-plan-${brief.targetSqft}sqft-${brief.style}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    })
+    .catch((err) => {
+      console.error('PDF generation failed:', err);
+      alert('Failed to generate PDF. Please try again.');
+    });
 }

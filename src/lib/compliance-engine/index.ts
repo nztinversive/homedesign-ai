@@ -40,6 +40,10 @@ class SimpleRuleRegistry implements RuleRegistry {
     this.rules.set(rule.id, rule);
   }
 
+  replaceRule(id: string, rule: ComplianceRule): void {
+    this.rules.set(id, rule);
+  }
+
   getRule(id: string): ComplianceRule | undefined {
     return this.rules.get(id);
   }
@@ -127,9 +131,9 @@ class DefaultComplianceEngine implements ComplianceEngine {
       coloradoAmendments.forEach(amendment => {
         const existingRule = this.registry.getRule(amendment.ruleId);
         if (existingRule && amendment.override) {
-          // Replace the rule check function with the Colorado version
-          existingRule.check = amendment.override;
-          existingRule.version = amendment.version || existingRule.version;
+          // Clone the rule before mutating to avoid leaking overrides into subsequent runs
+          const clonedRule = { ...existingRule, check: amendment.override, version: amendment.version || existingRule.version };
+          this.registry.replaceRule(amendment.ruleId, clonedRule);
         }
       });
     }

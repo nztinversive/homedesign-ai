@@ -392,6 +392,9 @@ export interface RuleRegistry {
   /** Get rule by ID */
   getRule: (id: string) => ComplianceRule | undefined;
   
+  /** Replace a rule by ID (used for jurisdiction overrides without mutating originals) */
+  replaceRule: (id: string, rule: ComplianceRule) => void;
+  
   /** Get all rules in category */
   getRulesByCategory: (category: RuleCategory) => ComplianceRule[];
   

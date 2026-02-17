@@ -66,7 +66,7 @@ function getFixtureClearances(room: Room): FixtureClearances[] {
       frontClearance: 21,
       sideClearance: 15
     });
-    if (room.type !== 'half_bath') {
+    if ((room.type as string) !== 'half_bath') {
       fixtures.push({
         type: 'shower',
         centerX: room.x + room.width * 0.7,

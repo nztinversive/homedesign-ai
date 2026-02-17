@@ -10,7 +10,12 @@ export function serializePlan(plan: PlacedPlan): string {
 }
 
 export function deserializePlan(json: string): PlacedPlan {
-  return JSON.parse(json) as PlacedPlan;
+  try {
+    return JSON.parse(json) as PlacedPlan;
+  } catch (err) {
+    console.error('Failed to deserialize plan:', err);
+    return {} as PlacedPlan;
+  }
 }
 
 export function serializeScore(score: PlanScore): string {
@@ -18,7 +23,12 @@ export function serializeScore(score: PlanScore): string {
 }
 
 export function deserializeScore(json: string): PlanScore {
-  return JSON.parse(json) as PlanScore;
+  try {
+    return JSON.parse(json) as PlanScore;
+  } catch (err) {
+    console.error('Failed to deserialize score:', err);
+    return { overall: 0 } as PlanScore;
+  }
 }
 
 export function serializeWalls(walls: WallAnalysis): string {
@@ -26,5 +36,10 @@ export function serializeWalls(walls: WallAnalysis): string {
 }
 
 export function deserializeWalls(json: string): WallAnalysis {
-  return JSON.parse(json) as WallAnalysis;
+  try {
+    return JSON.parse(json) as WallAnalysis;
+  } catch (err) {
+    console.error('Failed to deserialize walls:', err);
+    return {} as WallAnalysis;
+  }
 }

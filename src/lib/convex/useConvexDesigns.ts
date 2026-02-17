@@ -29,9 +29,9 @@ export function useConvexDesigns(projectId: Id<"projects"> | undefined) {
       name: `Variation ${i + 1}`,
       variationIndex: i,
       planData: JSON.stringify(plan),
-      wallData: JSON.stringify(wallAnalyses[i]),
-      scoreData: JSON.stringify(scores[i]),
-      overallScore: scores[i].overall,
+      wallData: JSON.stringify(wallAnalyses[i] ?? {}),
+      scoreData: JSON.stringify(scores[i] ?? {}),
+      overallScore: scores[i]?.overall ?? 0,
     }));
 
     return await saveGenerationResults({
@@ -45,11 +45,22 @@ export function useConvexDesigns(projectId: Id<"projects"> | undefined) {
     return await toggleFavoriteMutation({ designId });
   };
 
-  const parseDesign = (design: NonNullable<typeof designs>[number]) => ({
-    plan: JSON.parse(design.planData) as PlacedPlan,
-    walls: JSON.parse(design.wallData) as WallAnalysis,
-    score: JSON.parse(design.scoreData) as PlanScore,
-  });
+  const parseDesign = (design: NonNullable<typeof designs>[number]) => {
+    try {
+      return {
+        plan: JSON.parse(design.planData) as PlacedPlan,
+        walls: JSON.parse(design.wallData) as WallAnalysis,
+        score: JSON.parse(design.scoreData) as PlanScore,
+      };
+    } catch (err) {
+      console.error('Failed to parse design data:', err);
+      return {
+        plan: {} as PlacedPlan,
+        walls: {} as WallAnalysis,
+        score: { overall: 0 } as PlanScore,
+      };
+    }
+  };
 
   return {
     designs: designs ?? [],
