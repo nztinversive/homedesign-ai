@@ -22,6 +22,9 @@ import egressRules from './rules/egress';
 import bathroomRules from './rules/bathrooms';
 import kitchenRules from './rules/kitchens';
 import hallwayRules from './rules/hallways';
+import { accessibilityRules } from './rules/accessibility';
+import { structuralRules } from './rules/structural';
+import { energyRules } from './rules/energy';
 
 // Import jurisdiction-specific overrides
 import { coloradoAmendments } from './colorado';
@@ -90,7 +93,10 @@ class DefaultComplianceEngine implements ComplianceEngine {
       ...egressRules,
       ...bathroomRules,
       ...kitchenRules,
-      ...hallwayRules
+      ...hallwayRules,
+      ...accessibilityRules,
+      ...structuralRules,
+      ...energyRules,
     ];
 
     this.registry = new SimpleRuleRegistry(allRules);
@@ -353,7 +359,10 @@ export {
   egressRules,
   bathroomRules,
   kitchenRules,
-  hallwayRules
+  hallwayRules,
+  accessibilityRules,
+  structuralRules,
+  energyRules,
 };
 
 // Default export
@@ -364,5 +373,8 @@ export default {
   egressRules,
   bathroomRules,
   kitchenRules,
-  hallwayRules
+  hallwayRules,
+  accessibilityRules,
+  structuralRules,
+  energyRules,
 };
