@@ -1,9 +1,14 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
+import type { FunctionArgs } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import type { DesignBrief } from "../constraint-engine/types";
+
+type CreateProjectArgs = FunctionArgs<typeof api.projects.create>;
+type UpdateProjectArgs = FunctionArgs<typeof api.projects.update>;
+type ProjectBrief = CreateProjectArgs["brief"];
+type ProjectUpdates = Omit<UpdateProjectArgs, "projectId">;
 
 /**
  * Hook to manage projects in Convex.
@@ -20,26 +25,25 @@ export function useConvexProjects(userId: Id<"users"> | undefined) {
 
   const createProject = async (
     name: string,
-    brief: DesignBrief,
+    brief: ProjectBrief,
     description?: string
   ) => {
     if (!userId) throw new Error("No user");
     return await createMutation({
       userId,
       name,
-      brief: brief as any,
+      brief,
       description,
     });
   };
 
   const updateProject = async (
     projectId: Id<"projects">,
-    updates: { name?: string; description?: string; brief?: DesignBrief }
+    updates: ProjectUpdates
   ) => {
     return await updateMutation({
       projectId,
       ...updates,
-      brief: updates.brief as any,
     });
   };
 
