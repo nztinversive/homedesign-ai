@@ -4,7 +4,7 @@
  */
 
 import { runComplianceCheck, createComplianceEngine } from '../index';
-import type { FloorPlan, ComplianceContext } from '../types';
+import type { FloorPlan, ComplianceContext, RuleCategory } from '../types';
 
 /**
  * Sample 3BR/2BA floor plan for testing
@@ -389,7 +389,7 @@ function testEngineConfiguration() {
   console.log(`Total Registered Rules: ${registry.getEnabledRules().length}`);
   
   // Test rule categories
-  const categories = ['room-minimums', 'egress', 'bathrooms', 'kitchens', 'hallways'];
+  const categories: RuleCategory[] = ['room-minimums', 'egress', 'bathrooms', 'kitchens', 'hallways', 'accessibility', 'structural', 'energy'];
   categories.forEach(category => {
     const rules = registry.getRulesByCategory(category);
     console.log(`  ${category}: ${rules.length} rules`);

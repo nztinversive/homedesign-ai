@@ -85,7 +85,7 @@ const ceilingHeight: ComplianceRule = {
     const rooms = plan.rooms || [];
 
     for (const room of rooms) {
-      const ceilingFt = room.ceilingHeight || 8; // default 8ft if not specified
+      const ceilingFt = (room as any).ceilingHeight || 8; // default 8ft if not specified
       const isHab = isHabitable(room);
       const minHeight = isHab ? 7 : 6.67; // 7ft habitable, 6'8" non-habitable
       const minLabel = isHab ? "7ft" : "6ft 8in";
@@ -125,7 +125,8 @@ const headerSizing: ComplianceRule = {
     const violations: Violation[] = [];
 
     for (const room of plan.rooms || []) {
-      for (const door of room.doors || []) {
+      const roomDoors = (plan.doors || []).filter(d => d.connectsRooms?.includes(room.id));
+      for (const door of roomDoors) {
         const doorWidthFt = (door.width || 30) / 12;
         if (doorWidthFt > 4) {
           violations.push(createViolation(

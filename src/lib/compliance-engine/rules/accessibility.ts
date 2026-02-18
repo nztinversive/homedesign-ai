@@ -55,11 +55,12 @@ const doorwayClearWidth: ComplianceRule = {
     const violations: Violation[] = [];
     const rooms = plan.rooms || [];
 
+    const allDoors = plan.doors || [];
     for (const room of rooms) {
-      const doors = room.doors || [];
+      const doors = allDoors.filter(d => d.connectsRooms?.includes(room.id));
       for (const door of doors) {
         const doorWidth = door.width || 30;
-        const isExterior = door.isExterior || false;
+        const isExterior = door.type === 'exterior';
         const minWidth = isExterior ? 36 : 32;
 
         if (doorWidth < minWidth) {
@@ -273,9 +274,10 @@ const thresholdHeights: ComplianceRule = {
   check: (plan: FloorPlan, _context: ComplianceContext): RuleResult => {
     // This is a construction-phase check — at plan review, we flag as info
     const violations: Violation[] = [];
-    const rooms = (plan.rooms || []).filter(r => r.doors && r.doors.length > 0);
+    const allDoors = plan.doors || [];
+    const rooms = plan.rooms || [];
 
-    const hasExteriorDoors = rooms.some(r => (r.doors || []).some(d => d.isExterior));
+    const hasExteriorDoors = allDoors.some(d => d.type === 'exterior');
 
     if (hasExteriorDoors) {
       violations.push(createViolation(
@@ -311,7 +313,7 @@ const leverHardware: ComplianceRule = {
   check: (plan: FloorPlan, _context: ComplianceContext): RuleResult => {
     const violations: Violation[] = [];
     // Plan-level reminder — hardware is a spec detail
-    const totalDoors = (plan.rooms || []).reduce((sum, r) => sum + (r.doors || []).length, 0);
+    const totalDoors = (plan.doors || []).length;
 
     if (totalDoors > 0) {
       violations.push(createViolation(
