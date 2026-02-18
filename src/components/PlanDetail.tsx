@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
+import CompliancePanel from './CompliancePanel';
 import CostPanel from './CostPanel';
 import FloorPlanSVG from './FloorPlanSVG';
 import ScorePanel from './ScorePanel';
@@ -222,6 +223,7 @@ export default function PlanDetail({ plan, walls, score, brief, onRegenerate, on
       <aside className="space-y-4">
         <ScorePanel score={score} />
         <CostPanel plan={plan} walls={walls} />
+        <CompliancePanel plan={plan} />
 
         <section className="space-y-3 rounded-lg border border-dark-border bg-dark-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-[#CAB89B]">Rooms</h3>
