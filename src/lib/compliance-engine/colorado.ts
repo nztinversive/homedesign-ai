@@ -274,6 +274,191 @@ const seismicDesignConsiderations: ColoradoAmendment = {
 };
 
 /**
+ * Colorado SB 25-002: Regional Building Codes for Factory-Built Structures
+ * 
+ * Effective 2025. Establishes statewide regional building codes for factory-built
+ * residential/nonresidential structures and tiny homes. Key provisions:
+ * - State Housing Board adopts regional codes accounting for climatic zones (4,5,6,7)
+ * - Local governments CANNOT impose more restrictive standards on factory-built
+ *   structures than on site-built homes in the same zone
+ * - Local governments CANNOT exclude factory-built structures from their jurisdiction
+ * - Division of Housing oversees inspections, with third-party review allowed
+ * - Plumbing/electrical connections to external utilities require licensed contractors
+ * - Advisory committee expanded to 19 members for regional code development
+ * - Rules to be adopted by July 1, 2026; supersede conflicting local ordinances
+ */
+const sb25002FactoryBuiltCompliance: ColoradoAmendment = {
+  ruleId: 'colorado-sb25-002-factory-built',
+  description: 'Colorado SB 25-002: Statewide factory-built structure standards',
+  version: '1.0-SB25-002',
+
+  override: (plan: FloorPlan, context: ComplianceContext): RuleResult => {
+    const violations: Violation[] = [];
+    const params = context.jurisdictionParams || {};
+    const isFactoryBuilt = params.factoryBuilt === true;
+    const climateZone: number | undefined = params.climateZone;
+
+    if (!isFactoryBuilt) {
+      return {
+        ruleId: 'colorado-sb25-002-factory-built',
+        passed: true,
+        violations: [],
+        metadata: { coloradoAmendment: true, factoryBuilt: false }
+      };
+    }
+
+    // Climate zone validation — SB 25-002 requires regional codes for zones 4-7
+    if (climateZone && (climateZone >= 4 && climateZone <= 7)) {
+      violations.push({
+        id: 'sb25-002-climate-zone-regional-code',
+        description: `Factory-built structure in Climate Zone ${climateZone}: must comply with SB 25-002 regional building code standards`,
+        severity: 'info',
+        codeSection: 'SB 25-002 §24-32-3311',
+        remediation: [
+          `Verify compliance with State Housing Board regional codes for Climate Zone ${climateZone}`,
+          'Regional codes account for local climatic, geographic, and fire suppression requirements',
+          'Contact Division of Housing for current zone-specific standards',
+          'Factory-built certification must be obtained through the Division of Housing'
+        ]
+      });
+    }
+
+    // WUI zone + factory-built: enhanced fire protection per SB 25-002
+    if (context.wildfireInterfaceZone) {
+      violations.push({
+        id: 'sb25-002-wui-factory-built',
+        description: 'Factory-built structure in Wildfire Interface Zone requires SB 25-002 fire suppression compliance',
+        severity: 'warning',
+        codeSection: 'SB 25-002 §24-32-3311 (fire suppression)',
+        remediation: [
+          'Regional codes include fire suppression activity requirements for WUI zones',
+          'Pre-certified structures must still meet local wildfire risk provisions',
+          'Verify fire-resistant materials and defensible space per regional standards',
+          'Structures certified before regional code adoption are subject to existing WUI rules'
+        ]
+      });
+    }
+
+    // Local government parity rule — cannot impose stricter standards than site-built
+    violations.push({
+      id: 'sb25-002-local-parity',
+      description: 'SB 25-002 prohibits local governments from imposing stricter standards on factory-built structures than site-built homes',
+      severity: 'info',
+      codeSection: 'SB 25-002 §31-23-303',
+      remediation: [
+        'Local land use regulations apply only if also applicable to site-built housing',
+        'Municipality cannot exclude factory-built structures from any zone',
+        'Installation site requirements must not exceed those for conventional construction',
+        'Above-grade site-built components may still be locally regulated'
+      ]
+    });
+
+    // Installation & utility connection requirements
+    violations.push({
+      id: 'sb25-002-installation-requirements',
+      description: 'Factory-built structure installation requires registered installer; utility connections require licensed contractors',
+      severity: 'info',
+      codeSection: 'SB 25-002 §24-32-3315',
+      remediation: [
+        'Installation must be completed by a Division of Housing registered installer',
+        'Plumbing connections to external utilities require a licensed plumber under a registered contractor',
+        'Electrical connections to external utilities require a licensed electrician under a registered contractor',
+        'Inspections must be performed by Division-authorized or licensed inspectors',
+        'Third-party plan review may be used if approved by the Division'
+      ]
+    });
+
+    return {
+      ruleId: 'colorado-sb25-002-factory-built',
+      passed: violations.filter(v => v.severity === 'error').length === 0,
+      violations,
+      metadata: {
+        coloradoAmendment: true,
+        factoryBuilt: true,
+        climateZone,
+        sb25002: true
+      }
+    };
+  }
+};
+
+/**
+ * Colorado Proposition 123: Affordable Housing Funding & Compliance
+ * 
+ * Prop 123 (passed 2022) directs state TABOR refunds to affordable housing.
+ * Compliance implications for design:
+ * - Participating jurisdictions must increase affordable housing units by 3% (small) 
+ *   or 9% (large) over 3-year cycles
+ * - Expedited ("Fast Track") review process required for affordable housing projects
+ * - Factory-built/prefab homes count toward affordable housing unit targets, making
+ *   them a strategic option for Prop 123 compliance
+ * - No direct building code requirements, but designs targeting Prop 123 funding
+ *   should meet affordability and expedited review criteria
+ */
+const prop123AffordableHousing: ColoradoAmendment = {
+  ruleId: 'colorado-prop-123-affordable',
+  description: 'Colorado Proposition 123: Affordable housing design considerations',
+  version: '1.0-Prop123',
+
+  override: (plan: FloorPlan, context: ComplianceContext): RuleResult => {
+    const violations: Violation[] = [];
+    const params = context.jurisdictionParams || {};
+    const isProp123Target = params.prop123Target === true;
+    const isFactoryBuilt = params.factoryBuilt === true;
+
+    if (!isProp123Target) {
+      return {
+        ruleId: 'colorado-prop-123-affordable',
+        passed: true,
+        violations: [],
+        metadata: { coloradoAmendment: true, prop123: false }
+      };
+    }
+
+    // Expedited review eligibility
+    violations.push({
+      id: 'prop-123-expedited-review',
+      description: 'Prop 123 affordable housing project eligible for expedited development review',
+      severity: 'info',
+      codeSection: 'C.R.S. 29-32-105 §2 (Prop 123)',
+      remediation: [
+        'Submit project under jurisdiction\'s Fast Track review process',
+        'Verify jurisdiction has filed Prop 123 commitment with DOLA',
+        'Ensure project meets affordability criteria (income-restricted or NOAH)',
+        'New construction units require an Affordability Mechanism on record'
+      ]
+    });
+
+    // Factory-built advantage for Prop 123 compliance
+    if (isFactoryBuilt) {
+      violations.push({
+        id: 'prop-123-factory-built-advantage',
+        description: 'Factory-built design supports Prop 123 unit count targets with faster delivery',
+        severity: 'info',
+        codeSection: 'Prop 123 / SB 25-002 Synergy',
+        remediation: [
+          'Factory-built homes count toward jurisdiction affordable housing unit targets',
+          'SB 25-002 prevents local barriers to factory-built placement',
+          'Combined with expedited review, prefab accelerates Prop 123 compliance',
+          'Coordinate with DOLA Division of Housing for unit count tracking'
+        ]
+      });
+    }
+
+    return {
+      ruleId: 'colorado-prop-123-affordable',
+      passed: true,
+      violations,
+      metadata: {
+        coloradoAmendment: true,
+        prop123: true,
+        factoryBuilt: isFactoryBuilt
+      }
+    };
+  }
+};
+
+/**
  * Export all Colorado amendments
  */
 export const coloradoAmendments: ColoradoAmendment[] = [
@@ -281,7 +466,9 @@ export const coloradoAmendments: ColoradoAmendment[] = [
   wildfireInterfaceRequirements,
   highAltitudeRequirements,
   energyEfficiencyEnhancements,
-  seismicDesignConsiderations
+  seismicDesignConsiderations,
+  sb25002FactoryBuiltCompliance,
+  prop123AffordableHousing
 ];
 
 /**
@@ -298,6 +485,11 @@ export function createColoradoContext(
     snowLoad: 30, // Default 30 psf - varies by elevation
     seismicDesignCategory: 'A', // Most of Colorado is low seismic
     windSpeed: 90, // Default 90 mph - varies by region
+    jurisdictionParams: {
+      factoryBuilt: false, // Set true for factory-built/prefab structures (SB 25-002)
+      climateZone: undefined, // IECC climate zone 4-7 for Colorado (SB 25-002 regional codes)
+      prop123Target: false, // Set true if targeting Prop 123 affordable housing funding
+    },
     ...overrides
   };
 }
