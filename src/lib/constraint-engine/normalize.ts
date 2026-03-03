@@ -261,6 +261,74 @@ function ensureValidFloors(stories: 1 | 2, rooms: NormalizedRoom[], warnings: st
   }
 }
 
+/**
+ * Pre-submission feasibility check.
+ * Returns warnings (soft) and errors (hard blocks) for the given brief.
+ */
+export function validateBriefFeasibility(brief: DesignBrief): { warnings: string[]; errors: string[] } {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  if (brief.targetSqft < 400) {
+    errors.push('Target square footage must be at least 400 sqft.');
+  }
+
+  if (brief.rooms.length === 0) {
+    errors.push('Add at least one room to generate a plan.');
+    return { warnings, errors };
+  }
+
+  // Calculate minimum sqft needed for all rooms
+  let minTotal = 0;
+  let targetTotal = 0;
+  const roomSummary: string[] = [];
+
+  for (const room of brief.rooms) {
+    const defaults = ROOM_DEFAULTS[room.type];
+    if (!defaults) continue;
+    const minSqft = room.minSqft ?? defaults.minSqft;
+    const tgtSqft = room.targetSqft ?? defaults.targetSqft;
+    minTotal += minSqft;
+    targetTotal += tgtSqft;
+    roomSummary.push(`${room.label || room.type}: ${minSqft}-${tgtSqft} sqft`);
+  }
+
+  // Add implicit rooms estimate (foyer, hallway, walk-in closets)
+  const hasType = (t: RoomType) => brief.rooms.some(r => r.type === t);
+  if (!hasType('foyer')) minTotal += 25;
+  if (!hasType('hallway')) minTotal += 20;
+  const primaryBeds = brief.rooms.filter(r => r.type === 'primary_bed').length;
+  const closets = brief.rooms.filter(r => r.type === 'walk_in_closet').length;
+  if (primaryBeds > closets) minTotal += (primaryBeds - closets) * 25;
+  if (brief.stories === 2 && !hasType('stairs')) minTotal += 30;
+
+  if (minTotal > brief.targetSqft) {
+    errors.push(
+      `These ${brief.rooms.length} rooms need at least ${minTotal} sqft at minimum sizes, but target is only ${brief.targetSqft} sqft. ` +
+      `Remove rooms or increase target to ${minTotal}+ sqft.`
+    );
+  } else if (targetTotal > brief.targetSqft * 1.3) {
+    warnings.push(
+      `Room targets total ${targetTotal} sqft but home target is ${brief.targetSqft} sqft. Rooms will be scaled down significantly.`
+    );
+  } else if (minTotal > brief.targetSqft * 0.85) {
+    warnings.push(
+      `Tight fit: rooms need ~${minTotal} sqft minimum and target is ${brief.targetSqft} sqft. Consider adding more square footage for comfortable sizing.`
+    );
+  }
+
+  // Check bedroom count vs sqft ratio
+  const bedrooms = brief.rooms.filter(r => r.type === 'bedroom' || r.type === 'primary_bed').length;
+  if (bedrooms >= 3 && brief.targetSqft < 1200) {
+    warnings.push(`${bedrooms} bedrooms in ${brief.targetSqft} sqft will produce very tight layouts. Consider 1400+ sqft.`);
+  }
+  if (bedrooms >= 4 && brief.targetSqft < 1800) {
+    warnings.push(`${bedrooms} bedrooms typically needs 1800+ sqft for comfortable sizing.`);
+  }
+
+  return { warnings, errors };
+}
+
 export function normalizeDesignBrief(brief: DesignBrief): NormalizedBrief {
   const warnings: string[] = [];
   const impliedRoomIds: string[] = [];

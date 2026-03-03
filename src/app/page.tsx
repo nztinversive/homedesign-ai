@@ -31,6 +31,7 @@ export default function HomePage() {
   const [inputMode, setInputMode] = useState<InputMode>('scratch');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [engineWarnings, setEngineWarnings] = useState<string[]>([]);
   const persist = usePersistDesigns();
 
   const runGeneration = async (nextBrief: DesignBrief) => {
@@ -42,6 +43,7 @@ export default function HomePage() {
       await new Promise((resolve) => setTimeout(resolve, 160));
 
       const normalized = normalizeDesignBrief(nextBrief);
+      setEngineWarnings(normalized.metadata?.warnings ?? []);
       const envelope = computeEnvelope(normalized);
       const variations = generateVariations(normalized, envelope);
 
@@ -157,6 +159,15 @@ export default function HomePage() {
                 {plans.length} variations generated • Selected #{selectedPlanIndex + 1}
               </p>
             </div>
+
+            {engineWarnings.length > 0 && (
+              <div className="space-y-1 rounded-lg border border-[#5A471F] bg-[#2A2210] p-4">
+                <p className="text-sm font-semibold text-[#E7CF95]">⚠️ Engine notes:</p>
+                {engineWarnings.map((w, i) => (
+                  <p key={i} className="text-sm text-[#CDBB97]">• {w}</p>
+                ))}
+              </div>
+            )}
 
             <PlanGallery
               plans={plans}

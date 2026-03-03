@@ -28,7 +28,7 @@ export type {
   SharedWall,
 } from './types';
 
-export { normalizeDesignBrief } from './normalize';
+export { normalizeDesignBrief, validateBriefFeasibility } from './normalize';
 export { computeEnvelope } from './envelope';
 export { assignZones } from './zoning';
 export { placeRooms } from './placement';

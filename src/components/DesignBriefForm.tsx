@@ -6,6 +6,7 @@ import RoomListBuilder from './RoomListBuilder';
 import RoomPresets, { buildPresetRooms } from './RoomPresets';
 import RoomSuggestions from './RoomSuggestions';
 import type { DesignBrief, HomeStyle, LotConstraints, RoomRequirement } from '@/lib/constraint-engine/types';
+import { validateBriefFeasibility } from '@/lib/constraint-engine';
 import { getStyleDefaults } from '@/lib/style-defaults';
 
 const HOME_STYLES: HomeStyle[] = ['modern', 'traditional', 'craftsman', 'farmhouse', 'contemporary', 'ranch'];
@@ -66,6 +67,11 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
   }, [initialBrief]);
 
   const roomCount = useMemo(() => rooms.length, [rooms.length]);
+
+  const feasibility = useMemo(() => {
+    if (rooms.length === 0) return { warnings: [], errors: [] };
+    return validateBriefFeasibility({ targetSqft: Math.round(targetSqft), stories, style, rooms, lot });
+  }, [targetSqft, stories, style, rooms, lot]);
   const styleBannerText = useMemo(
     () => `${titleFromStyle(style)} style adds: ${styleDefaults.envelopeHints.highlights.join(', ')}`,
     [style, styleDefaults],
@@ -224,11 +230,29 @@ export default function DesignBriefForm({ initialBrief, isGenerating = false, on
       />
       <LotConstraintsPanel lot={lot} onChange={setLot} />
 
+      {feasibility.errors.length > 0 && (
+        <div className="space-y-2 rounded-lg border border-[#8B3A2B] bg-[#2A1714] p-4">
+          <p className="text-sm font-semibold text-[#F5A8A0]">⛔ Cannot generate:</p>
+          {feasibility.errors.map((err, i) => (
+            <p key={i} className="text-sm text-[#F5D0C5]">• {err}</p>
+          ))}
+        </div>
+      )}
+
+      {feasibility.warnings.length > 0 && feasibility.errors.length === 0 && (
+        <div className="space-y-2 rounded-lg border border-[#5A471F] bg-[#2A2210] p-4">
+          <p className="text-sm font-semibold text-[#E7CF95]">⚠️ Feasibility warnings:</p>
+          {feasibility.warnings.map((warn, i) => (
+            <p key={i} className="text-sm text-[#CDBB97]">• {warn}</p>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-dark-border pt-4">
         <p className="text-sm text-[#C8BDA8]">{roomCount} rooms configured</p>
         <button
           type="submit"
-          disabled={isGenerating}
+          disabled={isGenerating || feasibility.errors.length > 0}
           className="rounded-md border border-[#B8860B] bg-[#B8860B] px-5 py-2 text-sm font-semibold text-[#15130f] transition hover:bg-[#D29A12] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isGenerating ? 'Generating...' : 'Generate Plans'}
